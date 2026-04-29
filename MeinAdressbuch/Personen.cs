@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace MeinAdressbuch
 {
@@ -17,51 +18,62 @@ namespace MeinAdressbuch
 
         public void AddPerson(Person person)
         {
-            if (person == null)
+            try
             {
-                throw new ArgumentNullException(nameof(person), "Person darf nicht null sein.");
-            }
+                if (person == null)
+                {
+                    throw new ArgumentNullException(nameof(person), "Person darf nicht null sein.");
+                }
 
-            if (string.IsNullOrWhiteSpace(person.Vorname))
-            {
-                throw new ArgumentException("Vorname darf nicht leer sein.");
-            }
+                if (string.IsNullOrWhiteSpace(person.Vorname))
+                {
+                    throw new ArgumentException("Vorname darf nicht leer sein.");
+                }
 
-            if (string.IsNullOrWhiteSpace(person.Nachname))
-            {
-                throw new ArgumentException("Nachname darf nicht leer sein.");
-            }
+                if (string.IsNullOrWhiteSpace(person.Nachname))
+                {
+                    throw new ArgumentException("Nachname darf nicht leer sein.");
+                }
 
-            if (string.IsNullOrWhiteSpace(person.Geburtsdatum))
-            {
-                throw new ArgumentException("Geburtsdatum darf nicht leer sein.");
-            }
-            if (string.IsNullOrWhiteSpace(person.Adresse))
-            {
-                throw new ArgumentException("Adresse darf nicht leer sein.");
-            }
-            if (string.IsNullOrWhiteSpace(person.Postleitzahl))
-            {
-                throw new ArgumentException("Postleitzahl darf nicht leer sein.");
-            }
-            if (string.IsNullOrWhiteSpace(person.Telefonnummer))
-            {
-                throw new ArgumentException("Telefonnummer darf nicht leer sein.");
-            }
+                if (string.IsNullOrWhiteSpace(person.Geburtsdatum))
+                {
+                    throw new ArgumentException("Geburtsdatum darf nicht leer sein.");
+                }
+                if (string.IsNullOrWhiteSpace(person.Adresse))
+                {
+                    throw new ArgumentException("Adresse darf nicht leer sein.");
+                }
+                if (string.IsNullOrWhiteSpace(person.Postleitzahl))
+                {
+                    throw new ArgumentException("Postleitzahl darf nicht leer sein.");
+                }
+                if (string.IsNullOrWhiteSpace(person.Telefonnummer))
+                {
+                    throw new ArgumentException("Telefonnummer darf nicht leer sein.");
+                }
 
-            if (personen.Any(p => p.Vorname == person.Vorname &&
-            p.Nachname == person.Nachname &&
-            p.Geburtsdatum == person.Geburtsdatum &&
-            p.Adresse == person.Adresse &&
-            p.Postleitzahl == person.Postleitzahl &&
-            p.Telefonnummer == person.Telefonnummer))
-            {
-                throw new InvalidOperationException("Diese Person ist bereits im Adressbuch vorhanden.");
-            }
+                ValidateBirthdate(person.Geburtsdatum);
 
 
+                if (personen.Any(p => p.Vorname == person.Vorname &&
+                p.Nachname == person.Nachname &&
+                p.Geburtsdatum == person.Geburtsdatum &&
+                p.Adresse == person.Adresse &&
+                p.Postleitzahl == person.Postleitzahl &&
+                p.Telefonnummer == person.Telefonnummer))
+                {
+                    throw new InvalidOperationException("Diese Person ist bereits im Adressbuch vorhanden.");
+                }
 
-            personen.Add(person);
+
+
+                personen.Add(person);
+            }
+            catch (Exception ex) 
+            {
+                Console.WriteLine($"Fehler: {ex.Message}");
+            }
+            
         }
 
         public void RemovePerson(Person person)
@@ -82,7 +94,7 @@ namespace MeinAdressbuch
         public void SaveToFile()
         {
             string filePath = "MeinAdressbuch.txt";
-            List<string> lines = new List<string>();
+            List<byte> allData = new List<byte>();
 
             foreach (Person p in GetAllPersons())
             {
@@ -95,12 +107,32 @@ namespace MeinAdressbuch
                     p.Postleitzahl,
                     p.Telefonnummer
                 });
-                lines.Add(line);
+
+                byte[] lineByte =  Encoding.UTF8.GetBytes(line);
+                string base64Line = Convert.ToBase64String(lineByte);
+                byte[] encodedBytes = Encoding.UTF8.GetBytes(base64Line + "\n");
+                allData.AddRange(encodedBytes);
 
 
 
             }
-            File.WriteAllLines(filePath, lines);
+            File.WriteAllBytes(filePath, allData.ToArray());
+        }
+
+        public void ValidateBirthdate(string input)
+        {
+            string format = "dd.MM.yyyy";
+
+          
+            if (!DateTime.TryParseExact(input, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime birthdate))
+            {
+                throw new Exception($"Das Geburtsdatumformat von {input} ist ungültig");
+            }
+
+            if(birthdate > DateTime.Today)
+            {
+                throw new Exception($"Die Person kann nicht in der Zukunft geboren sein");
+            }
         }
     }
 }

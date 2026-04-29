@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace MeinAdressbuch
 {
@@ -12,6 +13,7 @@ namespace MeinAdressbuch
         public void Start()
         {
             string searchNachname;
+          
 
             try
             {
@@ -20,7 +22,7 @@ namespace MeinAdressbuch
 
                 if (File.Exists(path))
                 {
-                    string[] lines = File.ReadAllLines(path);
+                    string[] lines = File.ReadAllLines(path, Encoding.UTF8);
 
                     foreach (string line in lines)
                     {
@@ -28,14 +30,16 @@ namespace MeinAdressbuch
                         {
                             continue;
                         }
+                        string cleanLine = line.Trim().Replace("\uFEFF", "");
+                        Console.WriteLine("CHECK:");
+                        Console.WriteLine("[" + cleanLine + "]");
 
-                        string[] personData = line.Split(';');
 
-                        if (personData.Length < 6)
-                        {
-                            Console.WriteLine($"Ungültiger Datensatz übersprungen: {line}");
-                            continue;
-                        }
+                        byte[] decodedBytes = Convert.FromBase64String(cleanLine);
+                        string plainText = Encoding.UTF8.GetString(decodedBytes);
+                        string[] personData = plainText.Split(';');
+
+                        
 
                         Person p = new Person();
                         p.Vorname = personData[0];
