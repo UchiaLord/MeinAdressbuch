@@ -13,7 +13,7 @@ namespace MeinAdressbuch
         public void Start()
         {
             string searchNachname;
-          
+            bool hasUnsavedChanges = false;
 
             try
             {
@@ -31,8 +31,7 @@ namespace MeinAdressbuch
                             continue;
                         }
                         string cleanLine = line.Trim().Replace("\uFEFF", "");
-                        Console.WriteLine("CHECK:");
-                        Console.WriteLine("[" + cleanLine + "]");
+                        
 
 
                         byte[] decodedBytes = Convert.FromBase64String(cleanLine);
@@ -51,7 +50,7 @@ namespace MeinAdressbuch
 
                         personen.AddPerson(p);
                     }
-
+                    
                     while (true)
                     {
                         Console.WriteLine($"Derzeitige Anzahl an Personen beträgt: {personen.GetCount()}");
@@ -91,6 +90,7 @@ namespace MeinAdressbuch
                                     ph.Telefonnummer = Console.ReadLine();
 
                                     personen.AddPerson(ph);
+                                    hasUnsavedChanges = true;
                                     break;
                                 }
 
@@ -202,7 +202,7 @@ namespace MeinAdressbuch
                                             Console.WriteLine("Keine eindeutig passende Person gefunden.");
                                         }
                                     }
-
+                                    hasUnsavedChanges = true;
                                     break;
                                 }
 
@@ -210,6 +210,7 @@ namespace MeinAdressbuch
                                 {
                                     personen.SaveToFile();
                                     Console.WriteLine("Adressbuch erfolgreich gespeichert.");
+                                    hasUnsavedChanges = false;
                                     break;
                                 }
 
@@ -321,11 +322,34 @@ namespace MeinAdressbuch
                                     }
 
                                     Console.WriteLine("Person erfolgreich bearbeitet.");
+                                    hasUnsavedChanges = true;
                                     break;
                                 }
                             case "C" or "7":
                                 {
+                                    if(hasUnsavedChanges == true)
+                                    {
+                                        ConsoleKey key;
+
+                                        while (true)
+                                        {
+                                            Console.WriteLine("Möchten Sie das Adressbuch speichern bevor Sie beenden? (J/N)");
+                                            key = Console.ReadKey(true).Key;
+
+                                            if (key == ConsoleKey.J) {
+                                                personen.SaveToFile();
+                                                Console.WriteLine("Adressbuch erfolgreich gespeichert.");
+                                                break;
+                                            } else if(key == ConsoleKey.N) {
+                                                break;
+                                            }
+                                                
+
+                                            Console.WriteLine("\nNur J oder N erlaubt.");
+                                        }
+                                    }
                                     Console.WriteLine("Programm wird beendet.");
+
                                     return;
                                 }
 
